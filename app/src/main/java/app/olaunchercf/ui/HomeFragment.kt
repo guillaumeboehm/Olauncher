@@ -6,10 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.os.UserHandle
 import android.os.Vibrator
 import android.provider.Settings
-import android.util.Log
 import android.view.*
 import android.widget.TextView
 import androidx.core.os.bundleOf

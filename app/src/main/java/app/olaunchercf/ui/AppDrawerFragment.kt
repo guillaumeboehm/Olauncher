@@ -2,7 +2,6 @@ package app.olaunchercf.ui
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -85,10 +84,16 @@ class AppDrawerFragment : Fragment() {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                newText?.let {
-                    appAdapter.filter.filter(it.trim())
-                    binding.appRename.isVisible = rename && it.trim().isNotEmpty()
-                }
+                //if (Prefs(requireContext()).useFuzzySearch) {
+                //    //TODO appAdpter.filter with fuzzy find I guess
+                //    appAdapter.filter.filter()
+                //}
+                //else { // Do not use fuzzy search
+                    newText?.let {
+                        appAdapter.filter.filter(it.trim())
+                        binding.appRename.isVisible = rename && it.trim().isNotEmpty()
+                    }
+                //}
                 return false
             }
         })

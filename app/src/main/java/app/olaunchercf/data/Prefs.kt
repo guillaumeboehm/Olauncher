@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.os.UserHandle
 import android.os.UserManager
 import android.util.Log
+import android.widget.Filter
 import androidx.core.content.getSystemService
 import app.olaunchercf.helper.getUserHandleFromString
 import java.lang.RuntimeException
@@ -43,6 +44,8 @@ private const val SWIPE_RIGHT = "SWIPE_RIGHT"
 private const val SWIPE_LEFT = "SWIPE_LEFT"
 private const val CLICK_CLOCK = "CLICK_CLOCK"
 private const val CLICK_DATE = "CLICK_DATE"
+
+private const val USE_FUZZY_SEARCH = "USE_FUZZY_SEARCH"
 
 private const val TEXT_SIZE = "text_size"
 
@@ -203,6 +206,11 @@ class Prefs(val context: Context) {
     var appClickDate: AppModel
         get() = loadApp(CLICK_DATE)
         set(appModel) = storeApp(CLICK_DATE, appModel)
+
+    var useFuzzySearch: Boolean
+        get() = prefs.getBoolean(USE_FUZZY_SEARCH, false)
+        set(value) = prefs.edit().putBoolean(USE_FUZZY_SEARCH, value).apply()
+
 
 
     private fun loadApp(id: String): AppModel {

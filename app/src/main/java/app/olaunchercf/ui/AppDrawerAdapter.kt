@@ -7,6 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import android.content.Context
+import androidx.compose.ui.text.toLowerCase
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import app.olaunchercf.R
@@ -14,7 +16,7 @@ import app.olaunchercf.data.AppModel
 import app.olaunchercf.data.Constants
 import app.olaunchercf.data.Prefs
 import app.olaunchercf.databinding.AdapterAppDrawerBinding
-import kotlinx.coroutines.NonCancellable.cancel
+import app.olaunchercf.helper.levenshteinDistance
 import java.text.Normalizer
 
 class AppDrawerAdapter(
@@ -30,6 +32,7 @@ class AppDrawerAdapter(
     var appsList: MutableList<AppModel> = mutableListOf()
     var appFilteredList: MutableList<AppModel> = mutableListOf()
     private lateinit var binding: AdapterAppDrawerBinding
+    private lateinit var parentContext: Context // Used to access prefs in filter worker
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         //val view = LayoutInflater.from(parent.context)
@@ -38,6 +41,7 @@ class AppDrawerAdapter(
         binding = AdapterAppDrawerBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         //val view = binding.root
         binding.appTitle.textSize = Prefs(parent.context).textSize.toFloat()
+        parentContext = parent.context
 
         return ViewHolder(binding)
     }
@@ -83,10 +87,11 @@ class AppDrawerAdapter(
  *  */
                 val appFilteredList = (if (searchChars.isEmpty()) appsList
                 else appsList.filter { app ->
+                    var useFuzzy = Prefs(parentContext).useFuzzySearch
                     if (app.appAlias.isEmpty()) {
-                        appLabelMatches(app.appLabel, searchChars)
+                        appLabelMatches(app.appLabel, searchChars, useFuzzy)
                     } else {
-                        appLabelMatches(app.appAlias, searchChars)
+                        appLabelMatches(app.appAlias, searchChars, useFuzzy)
                     }
                 } as MutableList<AppModel>)
 
@@ -103,12 +108,25 @@ class AppDrawerAdapter(
         }
     }
 
-    private fun appLabelMatches(appLabel: String, searchChars: String): Boolean {
-        return (appLabel.contains(searchChars, true) or
-                Normalizer.normalize(appLabel, Normalizer.Form.NFD)
-                    .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
-                    .replace(Regex("[-_+,. ]"), "")
-                    .contains(searchChars, true))
+    private fun appLabelMatches(appLabel: String, searchChars: String, useFuzzy: Boolean): Boolean {
+        return if(useFuzzy) {
+            var appName = appLabel
+
+            // Case sensitive only if the search contains upper cases
+            if(!searchChars.matches(Regex("^.*[A-Z].*$"))) {
+                appName = appName.lowercase()
+            }
+
+            Log.d("FUZZY", "App: %s, Search: %s, Result: %d".format(appName, searchChars, levenshteinDistance(appName, searchChars)))
+
+            levenshteinDistance(appName, searchChars) <= searchChars.length.toFloat() * 0.5
+        } else {
+            (appLabel.contains(searchChars, true) or
+                    Normalizer.normalize(appLabel, Normalizer.Form.NFD)
+                        .replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "")
+                        .replace(Regex("[-_+,. ]"), "")
+                        .contains(searchChars, true))
+        }
     }
 
     fun setAppList(appsList: MutableList<AppModel>) {
